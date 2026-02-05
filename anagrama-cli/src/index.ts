@@ -11,6 +11,10 @@ import readline from "readline/promises";
 import process from "process";
 import keytar from "keytar";
 import { execFile } from "child_process";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const { version: CURRENT_VERSION } = require("../package.json") as { version: string };
 
 const DEFAULT_SITE_URL = process.env.ANAGRAMA_URL || "https://playanagrama.com";
 const DEFAULT_API_URL = process.env.ANAGRAMA_API_URL || "https://api.playanagrama.com";
@@ -19,7 +23,6 @@ const KEYCHAIN_ACCOUNT = "auth-token";
 const CONFIG_DIR = path.join(os.homedir(), ".anagrama");
 const CONFIG_PATH = path.join(CONFIG_DIR, "cli.json");
 const UPDATE_PATH = path.join(CONFIG_DIR, "update.json");
-const CURRENT_VERSION = "0.1.1";
 const NPM_REGISTRY_URL = "https://registry.npmjs.org/anagrama/latest";
 const CHECK_INTERVAL_MS = 3_600_000; // 1 hour
 
@@ -347,7 +350,7 @@ function printHomescreen(config: StoredConfig, minimal = false): void {
 
   if (minimal) {
     console.log();
-    console.log(accent.bold("  Anagrama CLI v0.1.0"));
+    console.log(accent.bold(`  Anagrama CLI v${CURRENT_VERSION}`));
     if (isLoggedIn) {
       console.log(chalk.gray(`  Welcome back, ${chalk.white(name)}!`));
     }
@@ -357,7 +360,8 @@ function printHomescreen(config: StoredConfig, minimal = false): void {
 
   // Top border
   console.log();
-  console.log(chalk.gray("  ─") + chalk.white(" Anagrama CLI v0.1.0 ") + chalk.gray("─".repeat(Math.max(0, boxWidth - 22))));
+  const versionLabel = ` Anagrama CLI v${CURRENT_VERSION} `;
+  console.log(chalk.gray("  ─") + chalk.white(versionLabel) + chalk.gray("─".repeat(Math.max(0, boxWidth - versionLabel.length - 1))));
 
   // Box top
   console.log(chalk.hex("#CC6B3D")("  ╭" + "─".repeat(boxWidth) + "╮"));
@@ -1299,7 +1303,7 @@ const program = new Command();
 program
   .name("anagrama")
   .description("Terminal client for Anagrama")
-  .version("0.1.0")
+  .version(CURRENT_VERSION)
   .option("-m, --minimal", "Use minimal output mode (less visual clutter)")
   .action(async (opts) => {
     globalMinimal = opts.minimal || false;
