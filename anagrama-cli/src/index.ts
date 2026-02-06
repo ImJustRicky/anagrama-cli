@@ -696,42 +696,51 @@ async function interactiveInput(
       return COMMANDS.filter(c => c.name.startsWith(input));
     };
 
+    // Clear N lines below cursor using relative moves (no save/restore)
+    const clearBelow = (lines: number) => {
+      if (lines === 0) return;
+      for (let i = 0; i < lines; i++) {
+        process.stdout.write("\n\x1b[2K");
+      }
+      process.stdout.write(`\x1b[${lines}A`);
+    };
+
     // Clear menu lines below cursor
     const clearMenu = () => {
-      if (!menuVisible || renderedMenuLines === 0) return;
-      // Save position, move down, clear each line, restore
-      process.stdout.write("\x1b[s"); // Save cursor
-      for (let i = 0; i < renderedMenuLines; i++) {
-        process.stdout.write("\x1b[B\x1b[2K"); // Down + clear line
-      }
-      process.stdout.write("\x1b[u"); // Restore cursor
+      if (renderedMenuLines === 0) return;
+      clearBelow(renderedMenuLines);
       menuVisible = false;
       renderedMenuLines = 0;
     };
 
-    // Render menu below cursor
+    // Render menu below cursor (self-contained: clears old menu first)
     const renderMenu = () => {
       filteredCommands = getFilteredCommands();
+
+      // Clear old menu lines
+      clearBelow(renderedMenuLines);
+
       if (filteredCommands.length === 0) {
         menuVisible = false;
+        renderedMenuLines = 0;
         return;
       }
 
-      process.stdout.write("\x1b[s"); // Save cursor position
       for (let i = 0; i < filteredCommands.length; i++) {
         const cmd = filteredCommands[i];
         const isSelected = i === selectedIndex;
-        process.stdout.write("\n"); // Move to next line
-        process.stdout.write("\x1b[2K"); // Clear line
+        process.stdout.write("\n\x1b[2K");
         if (isSelected) {
           process.stdout.write(chalk.bgHex("#333333").white(`  ${cmd.name.padEnd(12)}${cmd.desc}`));
         } else {
           process.stdout.write(chalk.gray(`  ${cmd.name.padEnd(12)}`) + chalk.dim(cmd.desc));
         }
       }
-      process.stdout.write("\x1b[u"); // Restore cursor position
+      // Move back up to input line and reposition cursor
+      process.stdout.write(`\x1b[${filteredCommands.length}A`);
+      renderInput();
       menuVisible = true;
-      renderedMenuLines = filteredCommands.length; // Track how many we rendered
+      renderedMenuLines = filteredCommands.length;
     };
 
     const renderInput = () => {
@@ -746,8 +755,8 @@ async function interactiveInput(
       if (key === "\u0003") {
         if (!ctrlCShown) {
           clearMenu();
-          // Save cursor, move down, print message, restore
-          process.stdout.write("\x1b[s\n\x1b[2K" + chalk.gray("  Use /exit to return to menu or /quit to exit.") + "\x1b[u");
+          process.stdout.write("\n\x1b[2K" + chalk.gray("  Use /exit to return to menu or /quit to exit.") + "\x1b[1A");
+          renderInput();
           ctrlCShown = true;
         }
         return;
@@ -755,8 +764,8 @@ async function interactiveInput(
 
       // Reset ctrlC flag on any other key
       if (ctrlCShown) {
-        // Clear the message line below
-        process.stdout.write("\x1b[s\n\x1b[2K\x1b[u");
+        process.stdout.write("\n\x1b[2K\x1b[1A");
+        renderInput();
         ctrlCShown = false;
       }
 
@@ -1095,14 +1104,14 @@ async function doPlay(config: StoredConfig, minimal = false): Promise<void> {
           if (!useMinimal) console.log(chalk.gray("    / for shortcuts"));
           console.log();
           // Print message below input
-          process.stdout.write("\x1b[s\n" + chalk.gray("  Letters shuffled!") + "\x1b[u");
+          process.stdout.write("\n" + chalk.gray("  Letters shuffled!") + "\x1b[1A\r");
           continue;
         default:
           renderGame(true);
           if (!useMinimal) console.log(chalk.gray("    / for shortcuts"));
           console.log();
           // Print message below input
-          process.stdout.write("\x1b[s\n" + chalk.yellow(`  Unknown command: /${cmd}. Type /help for commands.`) + "\x1b[u");
+          process.stdout.write("\n" + chalk.yellow(`  Unknown command: /${cmd}. Type /help for commands.`) + "\x1b[1A\r");
           continue;
       }
     }
