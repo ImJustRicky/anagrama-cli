@@ -57,7 +57,7 @@ While playing, type these commands:
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/anagrama-cli.git
+git clone https://github.com/AnagramaGames/anagrama-cli.git
 cd anagrama-cli
 
 # Install dependencies
