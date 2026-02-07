@@ -1590,7 +1590,7 @@ async function doPlay(config: StoredConfig, minimal = false): Promise<void> {
 
   const dateKey = puzzle.data.dateKey || localDateKey();
   const maxLives = 5; // Match the website - 5 lives
-  const scramble = puzzle.data.scramble || puzzle.data.letters || "";
+  const scramble = puzzle.data.poolScramble || puzzle.data.scramble || puzzle.data.letters || "";
   const targetLength = puzzle.data.length || 5;
 
   // Restore progress from server (syncs with website)
